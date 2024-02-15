@@ -1,5 +1,7 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+import tkinter as tk
+from tkinter import messagebox
 
 # Set up the authentication
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="-",
@@ -24,17 +26,35 @@ def get_time_range():
         print("Invalid choice. Defaulting to short term.")
         return 'short_term'
     
+
+def display_in_gui(title, items):
+    # Create a new Tkinter window
+    window = tk.Tk()
+    window.title(title)
+
+    # Create a listbox to show the items
+    listbox = tk.Listbox(window, width=50, height=20)
+    listbox.pack(padx=10, pady=10)
+
+    # Insert the items into the listbox
+    for item in items:
+        listbox.insert(tk.END, item)
+
+    # Start the Tkinter event loop
+    window.mainloop()
+
+
 def get_top_tracks(sp, time_range):
     top_tracks = sp.current_user_top_tracks(limit=50, time_range=time_range)
-    for index, track in enumerate(top_tracks['items'], start=1):
-        print(f"{index}. {track['name']} - {track['artists'][0]['name']}")
-    return [track['id'] for track in top_tracks['items']]  # Returns track IDs if needed
-
+    track_details = [f"{index}. {track['name']} - {track['artists'][0]['name']}"
+                     for index, track in enumerate(top_tracks['items'], start=1)]
+    display_in_gui("Top Tracks", track_details)
+    return [track['id'] for track in top_tracks['items']]
 
 
 
 def get_top_artists(sp, time_range):
-    top_artists = sp.current_user_top_artists(time_range=time_range)
+    top_artists = sp.current_user_top_artists(limit = 50, time_range=time_range)
 
     # Check if any top artists are returned
     if not top_artists['items']:
@@ -43,9 +63,10 @@ def get_top_artists(sp, time_range):
 
     # Print the list of top artists
     time_range_string = {"short_term": "Past 4 Weeks", "medium_term": "Past 6 Months", "long_term": "Several Years"}
-    print(f"Your Top Artists ({time_range_string[time_range]}):")
-    for index, artist in enumerate(top_artists['items'], start=1):
-        print(f"{index}. {artist['name']}")
+    artists_details = [f"{index}. {artist['name']}" for index, artist in enumerate(top_artists['items'], start=1)]
+    
+    # Call the display function with the list of top artists
+    display_in_gui(f"Your Top Artists ({time_range_string[time_range]})", artists_details)
 
 def create_playlist(sp, name, public=True, collaborative=False, description=''):
     user_id = sp.current_user()['id']
@@ -64,7 +85,7 @@ def interface(sp):
         "3": lambda: create_playlist_from_top_tracks(sp, time_range)
     }
 
-    choice = input("What would you like to see? (All options are for the selected time range)\n1. Top Tracks\n2. Top Artists\n3. Create Playlist from Top Tracks\n")
+    choice = input("What would you like to do? (All options are for the selected time range)\n1. See Top Tracks\n2. See Top Artists\n3. Create Playlist from Top Tracks\n")
 
     if choice in options:
         options[choice]()
